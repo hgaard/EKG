@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Net.Http;
-using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -15,15 +15,15 @@ namespace EKG
             _logger = logger;
         }
 
-        public void Start()
+        public async Task Start()
         {
             var client = new HttpClient();
             while (true)
             {
                 foreach (var service in ServiceRegistry.Services)
                 {
-                    var result = client.GetAsync(service.Url).Result;
-                    var payload = result.Content.ReadAsStringAsync().Result;
+                    var result = await client.GetAsync(service.Url);
+                    var payload = await result.Content.ReadAsStringAsync();
                     try
                     {
 
@@ -37,18 +37,17 @@ namespace EKG
                         else
                         {
 
-                            _logger.Error("The world had fallen over - Application {@applicationName} is no longer with us - ping result {@message}", service.Name, message);
+                            _logger.Error("The world has fallen over - Application {@applicationName} is no longer with us - ping result {@message}", service.Name, message);
                         }
                     }
                     catch (Exception e)
                     {
                         _logger.Error("Exception {exceptionMessage}", e.Message);
-                        //throw;
                     }
                     
                 }
 
-               Thread.Sleep(TimeSpan.FromSeconds(5));
+               await Task.Delay(TimeSpan.FromSeconds(5));
             }
         }
     }
